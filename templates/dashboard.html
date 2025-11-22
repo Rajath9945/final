@@ -1,0 +1,75 @@
+<!-- templates/dashboard.html -->
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Session {{ session.session_id }} - Analytics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container">
+
+    <a href="{{ url_for('home') }}">&larr; Back to sessions</a>
+
+    <h1>Session: {{ session.session_id }}</h1>
+    <p>
+        Duration: <strong>{{ session.duration_minutes }} minutes</strong><br>
+        Total faces analyzed: <strong>{{ session.total_faces_analyzed }}</strong><br>
+        Total emotion samples: <strong>{{ session.total_emotion_samples }}</strong>
+    </p>
+
+    <div class="flex-row">
+        <div class="card">
+            <h2>Emotion Distribution</h2>
+            <canvas id="emotionChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>Engagement Summary</h2>
+            <p>Engaged (happy + surprise + neutral): <strong>{{ stats.engaged_ratio * 100 }}%</strong></p>
+            <p>Disengaged (sad + angry + fear + disgust): <strong>{{ stats.disengaged_ratio * 100 }}%</strong></p>
+
+            <h3>Suggestions for Teacher</h3>
+            <ul>
+                {% for s in suggestions %}
+                    <li>{{ s }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const labels = {{ labels | tojson }};
+    const values = {{ values | tojson }};
+
+    const ctx = document.getElementById('emotionChart').getContext('2d');
+    const emotionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Emotion Counts',
+                data: values,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

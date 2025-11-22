@@ -1,0 +1,17 @@
+{
+    "session_id": "20251122_232431",
+    "duration_minutes": -0.3,
+    "total_frames": 1,
+    "total_faces_analyzed": 1,
+    "emotion_counts": {
+        "angry": 0,
+        "disgust": 0,
+        "fear": 1,
+        "happy": 0,
+        "sad": 0,
+        "surprise": 0,
+        "neutral": 0
+    },
+    "total_emotion_samples": 1,
+    "saved_at": "2025-11-22T23:24:37.727450"
+}
