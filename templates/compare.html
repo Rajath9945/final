@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compare Sessions</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet"/>
+</head>
+<body class="bg-slate-900 min-h-screen text-white p-6 md:p-10">
+
+    <a href="/" class="text-slate-300 underline mb-4 inline-block">&larr; Back to Sessions</a>
+
+    <div class="max-w-6xl mx-auto text-center mb-8" data-aos="fade-down">
+        <h1 class="text-3xl md:text-5xl font-extrabold mb-2">
+            🔁 Session Comparison
+        </h1>
+        <p class="text-slate-300">
+            Comparing the latest two sessions to understand changes in engagement.
+        </p>
+    </div>
+
+    <div class="max-w-6xl mx-auto bg-white/10 rounded-3xl p-6 shadow-xl backdrop-blur-xl mb-8" data-aos="zoom-in">
+        <canvas id="compareChart"></canvas>
+    </div>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6" data-aos="fade-up">
+        <div class="bg-white/10 rounded-2xl p-4">
+            <h2 class="text-xl font-semibold mb-2">Current Session</h2>
+            <p class="font-mono text-sm bg-white/10 inline-block px-2 py-1 rounded mb-2">{{ latest.session_id }}</p>
+            <p>Duration: <strong>{{ latest.duration_minutes }} min</strong></p>
+            <p>Faces: <strong>{{ latest.total_faces_analyzed }}</strong></p>
+        </div>
+
+        <div class="bg-white/10 rounded-2xl p-4">
+            <h2 class="text-xl font-semibold mb-2">Previous Session</h2>
+            <p class="font-mono text-sm bg-white/10 inline-block px-2 py-1 rounded mb-2">{{ previous.session_id }}</p>
+            <p>Duration: <strong>{{ previous.duration_minutes }} min</strong></p>
+            <p>Faces: <strong>{{ previous.total_faces_analyzed }}</strong></p>
+        </div>
+    </div>
+
+    <script>
+        new Chart(document.getElementById("compareChart"), {
+            type: "line",
+            data: {
+                labels: {{ labels | tojson }},
+                datasets: [
+                    {
+                        label: "Current Session",
+                        data: {{ latest_values | tojson }},
+                        borderColor: "#60a5fa",
+                        backgroundColor: "rgba(96,165,250,0.2)",
+                        tension: 0.4,
+                        borderWidth: 3,
+                        fill: true
+                    },
+                    {
+                        label: "Previous Session",
+                        data: {{ previous_values | tojson }},
+                        borderColor: "#f97373",
+                        backgroundColor: "rgba(248,115,115,0.2)",
+                        tension: 0.4,
+                        borderWidth: 3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 2200, easing: "easeOutElastic" },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+
+    <!-- AOS JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>AOS.init();</script>
+
+</body>
+</html>

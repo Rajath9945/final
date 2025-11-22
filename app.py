@@ -10,9 +10,16 @@ def compute_suggestions(session):
     counts = session["emotion_counts"]
     total = session["total_emotion_samples"] or 1
 
-    # Simple grouping:
+    # NOTE: this logic assumes raw emotions.
+    # If your session uses focused/laughing/bored etc, this will just treat them as 0,
+    # but it will still run safely.
     engaged = counts.get("happy", 0) + counts.get("surprise", 0) + counts.get("neutral", 0)
-    disengaged = counts.get("sad", 0) + counts.get("angry", 0) + counts.get("disgust", 0) + counts.get("fear", 0)
+    disengaged = (
+        counts.get("sad", 0)
+        + counts.get("angry", 0)
+        + counts.get("disgust", 0)
+        + counts.get("fear", 0)
+    )
 
     engaged_ratio = engaged / total
     disengaged_ratio = disengaged / total
@@ -45,7 +52,7 @@ def compute_suggestions(session):
 @app.route("/")
 def home():
     sessions = load_all_sessions()
-    # Sort newest first by saved_at if present
+    # newest first
     sessions_sorted = sorted(
         sessions,
         key=lambda s: s.get("saved_at", ""),
@@ -60,10 +67,32 @@ def session_dashboard(session_id):
     if not session:
         abort(404)
 
+    # --- find previous session for comparison ---
+    sessions = load_all_sessions()
+    sessions_sorted = sorted(
+        sessions,
+        key=lambda s: s.get("saved_at", ""),
+        reverse=True
+    )
+
+    prev_session = None
+    for idx, s in enumerate(sessions_sorted):
+        if s["session_id"] == session_id and idx + 1 < len(sessions_sorted):
+            prev_session = sessions_sorted[idx + 1]
+            break
+
+    # current session data
     labels = list(session["emotion_counts"].keys())
     values = [session["emotion_counts"][l] for l in labels]
 
     suggestions, stats = compute_suggestions(session)
+
+    # build compare values only if we have a previous session
+    compare_values = None
+    if prev_session is not None:
+        compare_values = [
+            prev_session["emotion_counts"].get(l, 0) for l in labels
+        ]
 
     return render_template(
         "dashboard.html",
@@ -72,9 +101,10 @@ def session_dashboard(session_id):
         values=values,
         suggestions=suggestions,
         stats=stats,
+        prev_session=prev_session,
+        compare_values=compare_values,
     )
 
 
 if __name__ == "__main__":
-    # Debug=True for development
     app.run(debug=True)

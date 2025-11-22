@@ -14,13 +14,11 @@ def main():
     try:
         duration_minutes = float(input("Enter monitoring duration in minutes (e.g., 1.5): "))
     except ValueError:
-        print("Invalid input. Using default 1 minute.")
         duration_minutes = 1.0
 
     duration_seconds = duration_minutes * 60
     session_id = create_session_id()
-    print(f"\nStarting session: {session_id}")
-    print("Press CTRL + C to stop early.\n")
+    print(f"\nStarting session: {session_id}\n")
 
     emotion_counts = init_emotion_counts()
     total_faces_analyzed = 0
@@ -28,99 +26,89 @@ def main():
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        print("Error: Could not access camera.")
+        print("Camera not accessible")
         return
 
-    yolo_model = YOLO("yolov8n.pt")  # auto-downloads on first run
+    yolo_model = YOLO("yolov8n.pt")
 
     start_time = time.time()
-    last_analysis_time = 0.0
-    analysis_interval = 0.8
+    last_time = 0
+    interval = 0.8
 
     try:
         while True:
             ret, frame = cap.read()
             if not ret:
-                print("Failed to read camera frame.")
                 break
 
             total_frames += 1
-            current_time = time.time()
+            now = time.time()
 
-            if current_time - last_analysis_time >= analysis_interval:
-                last_analysis_time = current_time
+            if now - last_time >= interval:
+                last_time = now
                 try:
                     results = DeepFace.analyze(
-                        frame,
-                        actions=["emotion"],
-                        enforce_detection=False
+                        frame, actions=["emotion"], enforce_detection=False
                     )
-
                     if isinstance(results, dict):
                         results = [results]
 
                     for r in results:
-                        dominant = r.get("dominant_emotion", "").lower()
+                        emo = r.get("dominant_emotion", "").lower()
 
-                        if dominant in ["happy", "surprise"]:
+                        if emo in ["happy", "surprise"]:
                             label = "laughing"
-                        elif dominant in ["neutral"]:
+                        elif emo in ["neutral"]:
                             label = "focused"
-                        elif dominant in ["angry", "disgust", "fear"]:
+                        elif emo in ["angry", "disgust", "fear"]:
                             label = "bored"
-                        elif dominant == "sad":
+                        elif emo == "sad":
                             label = "sad"
                         else:
                             label = None
 
-                        if label is not None:
+                        if label:
                             emotion_counts[label] += 1
                             total_faces_analyzed += 1
 
                 except Exception as e:
-                    print("DeepFace error:", e)
+                    print("DeepFace:", e)
 
                 phone_pred = yolo_model(frame, verbose=False)[0]
-                phone_detected = False
-
+                phone = False
                 for box in phone_pred.boxes:
                     cls = int(box.cls[0])
                     label = phone_pred.names[cls]
                     if label in ["cell phone", "phone"]:
-                        phone_detected = True
+                        phone = True
                         break
 
-                if phone_detected:
+                if phone:
                     emotion_counts["using_phone"] += 1
                     total_faces_analyzed += 1
 
-            if current_time - start_time >= duration_seconds:
-                print("Session completed.")
+            if now - start_time >= duration_seconds:
                 break
 
     except KeyboardInterrupt:
-        print("Session ended manually.")
+        print("Stopped manually")
 
     finally:
         cap.release()
 
-    summary_path = save_session_summary(
-        session_id=session_id,
-        duration_minutes=duration_minutes,
-        emotion_counts=emotion_counts,
-        total_faces_analyzed=total_faces_analyzed,
-        total_frames=total_frames
+    path = save_session_summary(
+        session_id,
+        duration_minutes,
+        emotion_counts,
+        total_faces_analyzed,
+        total_frames
     )
 
-    print("\n=== SESSION SUMMARY ===")
-    print("Session ID:", session_id)
-    print("Saved to:", summary_path)
-    print("Total frames:", total_frames)
-    print("Faces analyzed:", total_faces_analyzed)
-    print("Emotion counts:", emotion_counts)
-
+    print("\n=== SUMMARY ===")
+    print("Saved:", path)
+    print("Counts:", emotion_counts)
     print("\nRun: python app.py")
-    print("Open: http://127.0.0.1:5000/")
+    print("Visit: http://127.0.0.1:5000/")
 
 if __name__ == "__main__":
     main()

@@ -1,75 +1,221 @@
-<!-- templates/dashboard.html -->
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Session {{ session.session_id }} - Analytics</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- Chart.js CDN -->
+    <meta charset="UTF-8">
+    <title>Analytics - {{ session.session_id }}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.min.js"></script>
 </head>
-<body>
-<div class="container">
+<body class="bg-slate-900 min-h-screen text-white p-6 md:p-10">
 
-    <a href="{{ url_for('home') }}">&larr; Back to sessions</a>
+<a href="/" class="text-slate-300 text-sm md:text-base underline mb-4 inline-block">&larr; Back to Sessions</a>
 
-    <h1>Session: {{ session.session_id }}</h1>
-    <p>
-        Duration: <strong>{{ session.duration_minutes }} minutes</strong><br>
-        Total faces analyzed: <strong>{{ session.total_faces_analyzed }}</strong><br>
-        Total emotion samples: <strong>{{ session.total_emotion_samples }}</strong>
+<div class="max-w-6xl mx-auto mb-8 text-center" data-aos="zoom-in">
+    <h1 class="text-3xl md:text-5xl font-extrabold tracking-wide mb-2">
+        📊 Engagement Analytics Dashboard
+    </h1>
+    <p class="text-slate-300 text-lg">
+        Session:
+        <span class="font-mono bg-white/10 px-2 py-1 rounded-lg">{{ session.session_id }}</span>
     </p>
+</div>
 
-    <div class="flex-row">
-        <div class="card">
-            <h2>Emotion Distribution</h2>
-            <canvas id="emotionChart"></canvas>
+<!-- Top Stats Cards -->
+<div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+    <div class="bg-white/10 rounded-2xl p-5 text-center shadow-lg border border-purple-500/30"
+         data-aos="fade-up" data-aos-delay="50">
+        <p class="text-slate-200 text-sm">Total Emotion Samples</p>
+        <h2 id="totalCount" class="text-3xl md:text-4xl font-extrabold text-purple-400">0</h2>
+    </div>
+    <div class="bg-white/10 rounded-2xl p-5 text-center shadow-lg border border-blue-500/30"
+         data-aos="fade-up" data-aos-delay="150">
+        <p class="text-slate-200 text-sm">Faces Analyzed</p>
+        <h2 id="faceCount" class="text-3xl md:text-4xl font-extrabold text-blue-400">0</h2>
+    </div>
+    <div class="bg-white/10 rounded-2xl p-5 text-center shadow-lg border border-emerald-500/30"
+         data-aos="fade-up" data-aos-delay="250">
+        <p class="text-slate-200 text-sm">Duration (min)</p>
+        <h2 id="duration" class="text-3xl md:text-4xl font-extrabold text-emerald-400">0</h2>
+    </div>
+    <div class="bg-white/10 rounded-2xl p-5 text-center shadow-lg border border-amber-500/30"
+         data-aos="fade-up" data-aos-delay="350">
+        <p class="text-slate-200 text-sm">Engagement Score</p>
+        <h2 id="engagement" class="text-3xl md:text-4xl font-extrabold text-amber-400">0%</h2>
+    </div>
+</div>
+
+<!-- Graph + Suggestions -->
+<div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+
+    <!-- Graph Card -->
+    <div class="bg-white/10 rounded-3xl p-6 shadow-xl backdrop-blur-xl" data-aos="fade-right">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-2xl font-bold">Emotion Analytics</h2>
+            <div class="space-x-2">
+                <button onclick="showBar()"
+                        class="px-3 py-1 rounded-lg text-sm bg-indigo-500 hover:bg-indigo-600 transition">
+                    Bar
+                </button>
+                <button onclick="showPie()"
+                        class="px-3 py-1 rounded-lg text-sm bg-pink-500 hover:bg-pink-600 transition">
+                    Pie
+                </button>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>Engagement Summary</h2>
-            <p>Engaged (happy + surprise + neutral): <strong>{{ stats.engaged_ratio * 100 }}%</strong></p>
-            <p>Disengaged (sad + angry + fear + disgust): <strong>{{ stats.disengaged_ratio * 100 }}%</strong></p>
-
-            <h3>Suggestions for Teacher</h3>
-            <ul>
-                {% for s in suggestions %}
-                    <li>{{ s }}</li>
-                {% endfor %}
-            </ul>
-        </div>
+        <canvas id="emotionBar" class="mt-4"></canvas>
+        <canvas id="emotionPie" class="mt-4 hidden"></canvas>
     </div>
 
+    <!-- Suggestions Card -->
+    <div class="bg-white/10 rounded-3xl p-6 shadow-xl backdrop-blur-xl" data-aos="fade-left">
+        <h2 class="text-2xl font-bold mb-3">AI Recommendations for Teacher</h2>
+        <ul class="space-y-2 text-slate-100 text-sm md:text-base">
+            {% for s in suggestions %}
+                <li class="bg-white/10 p-3 rounded-xl hover:bg-purple-500/30 transition">
+                    {{ s }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+
+<!-- Comparison chart (inside dashboard) -->
+{% if prev_session %}
+<div class="max-w-6xl mx-auto bg-white/10 rounded-3xl p-6 shadow-xl backdrop-blur-xl mb-10"
+     data-aos="fade-up">
+    <h2 class="text-2xl font-bold mb-3">Compare with Previous Session</h2>
+    <p class="text-slate-300 mb-2 text-sm">
+        Previous Session:
+        <span class="font-mono bg-white/10 px-2 py-1 rounded-lg">{{ prev_session.session_id }}</span>
+    </p>
+    <canvas id="compareChart"></canvas>
+</div>
+{% endif %}
+
+<!-- Table -->
+<div class="max-w-6xl mx-auto bg-white/10 rounded-3xl p-6 shadow-xl backdrop-blur-xl mb-12"
+     data-aos="fade-up">
+    <h2 class="text-2xl font-bold mb-4">Session Data Table</h2>
+    <table class="w-full text-left text-slate-100 text-sm md:text-base">
+        <thead class="bg-white/10">
+        <tr>
+            <th class="p-3">Emotion</th>
+            <th class="p-3">Count</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for label, value in session.emotion_counts.items() %}
+            <tr class="border-b border-white/10 hover:bg-white/5 transition">
+                <td class="p-3 capitalize">{{ label }}</td>
+                <td class="p-3">{{ value }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
 
 <script>
     const labels = {{ labels | tojson }};
     const values = {{ values | tojson }};
 
-    const ctx = document.getElementById('emotionChart').getContext('2d');
-    const emotionChart = new Chart(ctx, {
-        type: 'bar',
+    // Bar chart
+    const barCtx = document.getElementById("emotionBar");
+    const barChart = new Chart(barCtx, {
+        type: "bar",
         data: {
             labels: labels,
             datasets: [{
-                label: 'Emotion Counts',
                 data: values,
+                backgroundColor: ["#4ade80", "#60a5fa", "#f97373", "#fbbf24", "#c084fc"],
+                borderRadius: 12
             }]
         },
         options: {
             responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
+            animation: { duration: 2000, easing: "easeInOutElastic" },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Pie chart
+    const pieCtx = document.getElementById("emotionPie");
+    const pieChart = new Chart(pieCtx, {
+        type: "pie",
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: ["#4ade80", "#60a5fa", "#f97373", "#fbbf24", "#c084fc"]
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 2200, easing: "easeOutBounce" }
+        }
+    });
+
+    function showBar() {
+        document.getElementById("emotionBar").classList.remove("hidden");
+        document.getElementById("emotionPie").classList.add("hidden");
+    }
+
+    function showPie() {
+        document.getElementById("emotionPie").classList.remove("hidden");
+        document.getElementById("emotionBar").classList.add("hidden");
+    }
+
+    // Counters
+    new countUp.CountUp("totalCount", {{ session.total_emotion_samples }}).start();
+    new countUp.CountUp("faceCount", {{ session.total_faces_analyzed }}).start();
+    new countUp.CountUp("duration", {{ session.duration_minutes }}).start();
+    new countUp.CountUp("engagement", {{ stats.engaged_ratio * 100 }}).start();
+</script>
+
+{% if prev_session %}
+<script>
+    // Comparison chart only if prev_session exists
+    const compareCtx = document.getElementById("compareChart");
+    const compareChart = new Chart(compareCtx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Current Session",
+                    data: {{ values | tojson }},
+                    borderColor: "#60a5fa",
+                    backgroundColor: "rgba(96,165,250,0.2)",
+                    tension: 0.4,
+                    borderWidth: 3,
+                    fill: true
+                },
+                {
+                    label: "Previous Session",
+                    data: {{ compare_values | tojson }},
+                    borderColor: "#f97373",
+                    backgroundColor: "rgba(248,115,115,0.2)",
+                    tension: 0.4,
+                    borderWidth: 3,
+                    fill: true
                 }
-            }
+            ]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 2200, easing: "easeOutElastic" },
+            scales: { y: { beginAtZero: true } }
         }
     });
 </script>
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script>AOS.init();</script>
 
 </body>
 </html>

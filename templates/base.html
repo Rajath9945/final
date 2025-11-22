@@ -1,47 +1,71 @@
-<!-- templates/base.html -->
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Real-Time Effective Learning - Sessions</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-<div class="container">
-    <h1>Real-Time Effective Learning System</h1>
-    <p>Select a session to view analytics.</p>
+    <meta charset="UTF-8">
+    <title>Effective Learning - Sessions</title>
 
-    {% if sessions %}
-        <table>
-            <thead>
-            <tr>
-                <th>Session ID</th>
-                <th>Duration (min)</th>
-                <th>Total Faces</th>
-                <th>Saved At</th>
-                <th>View</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for s in sessions %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet"/>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-white">
+
+<div class="max-w-6xl mx-auto py-10 px-4">
+
+    <header class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4" data-aos="fade-down">
+        <div>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-wide">
+                🎓 Real-Time Effective Learning System
+            </h1>
+            <p class="text-slate-300 mt-2 text-lg">
+                Monitor classroom emotions, distractions and engagement across sessions.
+            </p>
+        </div>
+    </header>
+
+    <section class="bg-white/10 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/10" data-aos="zoom-in">
+        <h2 class="text-2xl font-bold mb-4">Recorded Sessions</h2>
+
+        {% if sessions %}
+            <table class="w-full text-left text-slate-100 text-sm md:text-base">
+                <thead class="bg-white/10">
                 <tr>
-                    <td>{{ s.session_id }}</td>
-                    <td>{{ s.duration_minutes }}</td>
-                    <td>{{ s.total_faces_analyzed }}</td>
-                    <td>{{ s.saved_at }}</td>
-                    <td>
-                        <a href="{{ url_for('session_dashboard', session_id=s.session_id) }}">
-                            Open Dashboard
-                        </a>
-                    </td>
+                    <th class="p-3">Session ID</th>
+                    <th class="p-3">Duration</th>
+                    <th class="p-3">Faces</th>
+                    <th class="p-3">Saved At</th>
+                    <th class="p-3">Actions</th>
                 </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No sessions recorded yet. Run <code>python run_session.py</code> first.</p>
-    {% endif %}
+                </thead>
+                <tbody>
+                {% for s in sessions %}
+                    <tr class="border-b border-white/10 hover:bg-white/5 transition" data-aos="fade-up">
+                        <td class="p-3 font-mono text-xs md:text-sm">{{ s.session_id }}</td>
+                        <td class="p-3">{{ s.duration_minutes }} min</td>
+                        <td class="p-3">{{ s.total_faces_analyzed }}</td>
+                        <td class="p-3">{{ s.saved_at }}</td>
+                        <td class="p-3">
+                            <a href="{{ url_for('session_dashboard', session_id=s.session_id) }}"
+                               class="px-3 py-1.5 rounded-lg bg-emerald-500 text-xs md:text-sm font-semibold text-slate-900 hover:bg-emerald-400 transition">
+                                View Dashboard
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-slate-200 text-lg">
+                No sessions yet. Run
+                <code class="bg-black/40 px-2 py-1 rounded">python run_session.py</code>
+                to create one.
+            </p>
+        {% endif %}
+    </section>
+
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script>AOS.init();</script>
+
 </body>
 </html>
