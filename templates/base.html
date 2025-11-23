@@ -5,7 +5,7 @@
     <title>Effective Learning - Sessions</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" />
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-white">
 
@@ -17,7 +17,7 @@
                 🎓 Real-Time Effective Learning System
             </h1>
             <p class="text-slate-300 mt-2 text-lg">
-                Monitor classroom emotions, distractions and engagement across sessions.
+                Monitor student focus, emotions and phone usage in real time.
             </p>
         </div>
     </header>
@@ -30,21 +30,21 @@
                 <thead class="bg-white/10">
                 <tr>
                     <th class="p-3">Session ID</th>
-                    <th class="p-3">Duration</th>
+                    <th class="p-3">Duration (min)</th>
                     <th class="p-3">Faces</th>
                     <th class="p-3">Saved At</th>
-                    <th class="p-3">Actions</th>
+                    <th class="p-3">Action</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% for s in sessions %}
                     <tr class="border-b border-white/10 hover:bg-white/5 transition" data-aos="fade-up">
                         <td class="p-3 font-mono text-xs md:text-sm">{{ s.session_id }}</td>
-                        <td class="p-3">{{ s.duration_minutes }} min</td>
+                        <td class="p-3">{{ s.duration_minutes }}</td>
                         <td class="p-3">{{ s.total_faces_analyzed }}</td>
                         <td class="p-3">{{ s.saved_at }}</td>
                         <td class="p-3">
-                            <a href="{{ url_for('session_dashboard', session_id=s.session_id) }}"
+                            <a href="{{ url_for('dashboard', session_id=s.session_id) }}"
                                class="px-3 py-1.5 rounded-lg bg-emerald-500 text-xs md:text-sm font-semibold text-slate-900 hover:bg-emerald-400 transition">
                                 View Dashboard
                             </a>
@@ -55,9 +55,9 @@
             </table>
         {% else %}
             <p class="text-slate-200 text-lg">
-                No sessions yet. Run
+                No sessions found. Run
                 <code class="bg-black/40 px-2 py-1 rounded">python run_session.py</code>
-                to create one.
+                to create a new session.
             </p>
         {% endif %}
     </section>
@@ -66,6 +66,5 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
 <script>AOS.init();</script>
-
 </body>
 </html>

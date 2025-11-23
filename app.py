@@ -1,108 +1,90 @@
-# app.py
-
-from flask import Flask, render_template, abort
-from emotion_utils import load_all_sessions, load_session, EMOTION_LABELS
+from flask import Flask, render_template, request, abort
+from emotion_utils import load_all_sessions, load_session
 
 app = Flask(__name__)
 
 
 def compute_suggestions(session):
     counts = session["emotion_counts"]
-    total = session["total_emotion_samples"] or 1
 
-    # NOTE: this logic assumes raw emotions.
-    # If your session uses focused/laughing/bored etc, this will just treat them as 0,
-    # but it will still run safely.
-    engaged = counts.get("happy", 0) + counts.get("surprise", 0) + counts.get("neutral", 0)
-    disengaged = (
-        counts.get("sad", 0)
-        + counts.get("angry", 0)
-        + counts.get("disgust", 0)
-        + counts.get("fear", 0)
-    )
+    focused = counts.get("focused", 0)
+    laughing = counts.get("laughing", 0)
+    bored = counts.get("bored", 0)
+    sad = counts.get("sad", 0)
+    phone = counts.get("using_phone", 0)
+
+    total = max(focused + laughing + bored + sad + phone, 1)
+
+    engaged = focused + laughing
+    disengaged = bored + sad + phone
 
     engaged_ratio = engaged / total
-    disengaged_ratio = disengaged / total
+    phone_ratio = phone / total
 
     suggestions = []
 
-    if engaged_ratio >= 0.6:
-        suggestions.append("Overall engagement is high. You can maintain the current teaching pace.")
-    elif 0.4 <= engaged_ratio < 0.6:
-        suggestions.append("Engagement is moderate. Consider adding short interactive questions or activities.")
+    if engaged_ratio >= 0.7:
+        suggestions.append("Excellent engagement — keep going!")
+    elif engaged_ratio >= 0.5:
+        suggestions.append("Moderate engagement — add interaction activities.")
     else:
-        suggestions.append("Engagement appears low. Try using more real-life examples, group activities, or a short break.")
+        suggestions.append("Low engagement — include visual aids or real-life examples.")
 
-    if counts.get("sad", 0) > counts.get("happy", 0):
-        suggestions.append("Many students look sad/bored. Check if the topic is too difficult or if the speed is too fast.")
-    if counts.get("angry", 0) > 0:
-        suggestions.append("Some frustration detected (angry emotion). Clarify tricky concepts and invite questions.")
-    if counts.get("happy", 0) > 0:
-        suggestions.append("There are happy/laughing moments – keep using humor and positive feedback.")
-    if counts.get("neutral", 0) > 0 and engaged_ratio < 0.5:
-        suggestions.append("Many neutral faces. You may need to increase interaction to convert neutral to engaged.")
+    if phone_ratio > 0.2:
+        suggestions.append("High mobile phone usage detected. Encourage students to focus.")
 
     return suggestions, {
         "engaged_ratio": round(engaged_ratio, 2),
-        "disengaged_ratio": round(disengaged_ratio, 2),
-        "total": total,
+        "disengaged_ratio": round(disengaged, 2),
+        "phone_ratio": round(phone_ratio, 2),
     }
 
 
 @app.route("/")
 def home():
     sessions = load_all_sessions()
-    # newest first
-    sessions_sorted = sorted(
-        sessions,
-        key=lambda s: s.get("saved_at", ""),
-        reverse=True
-    )
+    sessions_sorted = sorted(sessions, key=lambda x: x["saved_at"], reverse=True)
     return render_template("base.html", sessions=sessions_sorted)
 
 
 @app.route("/session/<session_id>")
-def session_dashboard(session_id):
+def dashboard(session_id):
     session = load_session(session_id)
     if not session:
         abort(404)
 
-    # --- find previous session for comparison ---
-    sessions = load_all_sessions()
-    sessions_sorted = sorted(
-        sessions,
-        key=lambda s: s.get("saved_at", ""),
-        reverse=True
-    )
-
-    prev_session = None
-    for idx, s in enumerate(sessions_sorted):
-        if s["session_id"] == session_id and idx + 1 < len(sessions_sorted):
-            prev_session = sessions_sorted[idx + 1]
-            break
-
-    # current session data
     labels = list(session["emotion_counts"].keys())
     values = [session["emotion_counts"][l] for l in labels]
 
     suggestions, stats = compute_suggestions(session)
-
-    # build compare values only if we have a previous session
-    compare_values = None
-    if prev_session is not None:
-        compare_values = [
-            prev_session["emotion_counts"].get(l, 0) for l in labels
-        ]
 
     return render_template(
         "dashboard.html",
         session=session,
         labels=labels,
         values=values,
-        suggestions=suggestions,
         stats=stats,
-        prev_session=prev_session,
-        compare_values=compare_values,
+        suggestions=suggestions,
+        session_list=load_all_sessions(),
+    )
+
+
+@app.route("/compare", methods=["POST"])
+def compare():
+    s1 = load_session(request.form.get("current_session"))
+    s2 = load_session(request.form.get("compare_session"))
+
+    if not s1 or not s2:
+        abort(404)
+
+    labels = list(s1["emotion_counts"].keys())
+    return render_template(
+        "compare.html",
+        labels=labels,
+        s1=s1,
+        s2=s2,
+        s1_vals=[s1["emotion_counts"].get(lbl, 0) for lbl in labels],
+        s2_vals=[s2["emotion_counts"].get(lbl, 0) for lbl in labels],
     )
 
 

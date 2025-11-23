@@ -1,0 +1,15 @@
+{
+    "session_id": "20251123_121740",
+    "duration_minutes": 0.5,
+    "total_frames": 3,
+    "total_faces_analyzed": 3,
+    "emotion_counts": {
+        "focused": 0,
+        "laughing": 0,
+        "bored": 2,
+        "sad": 1,
+        "using_phone": 0
+    },
+    "total_emotion_samples": 3,
+    "saved_at": "2025-11-23T12:18:35.872173"
+}

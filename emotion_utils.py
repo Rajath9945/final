@@ -1,5 +1,5 @@
-import json
 import os
+import json
 from datetime import datetime
 from typing import Dict
 
@@ -14,38 +14,46 @@ def create_session_id() -> str:
 
 
 def init_emotion_counts() -> Dict[str, int]:
-    return {e: 0 for e in EMOTION_LABELS}
+    return {label: 0 for label in EMOTION_LABELS}
 
 
-def save_session_summary(session_id, duration_minutes, emotion_counts, total_faces_analyzed, total_frames):
+def save_session_summary(
+    session_id: str,
+    duration_minutes: float,
+    emotion_counts: Dict[str, int],
+    total_faces_analyzed: int,
+    total_frames: int,
+):
     data = {
         "session_id": session_id,
         "duration_minutes": duration_minutes,
-        "total_frames": total_frames,
         "total_faces_analyzed": total_faces_analyzed,
+        "total_frames": total_frames,
         "emotion_counts": emotion_counts,
         "total_emotion_samples": sum(emotion_counts.values()),
-        "saved_at": datetime.now().isoformat()
+        "saved_at": datetime.now().isoformat(),
     }
 
-    path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
-    with open(path, "w") as f:
+    file_path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
+    with open(file_path, "w") as f:
         json.dump(data, f, indent=4)
-    return path
 
 
 def load_all_sessions():
     sessions = []
-    for f in os.listdir(SESSIONS_DIR):
-        if f.endswith(".json"):
-            with open(os.path.join(SESSIONS_DIR, f)) as fp:
-                sessions.append(json.load(fp))
+    if not os.path.exists(SESSIONS_DIR):
+        return sessions
+
+    for fname in os.listdir(SESSIONS_DIR):
+        if fname.endswith(".json"):
+            with open(os.path.join(SESSIONS_DIR, fname), "r") as f:
+                sessions.append(json.load(f))
     return sessions
 
 
 def load_session(session_id: str):
-    path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
-    if not os.path.exists(path):
+    file_path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
+    if not os.path.exists(file_path):
         return None
-    with open(path) as f:
+    with open(file_path, "r") as f:
         return json.load(f)
