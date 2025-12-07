@@ -1,114 +1,125 @@
-import time
-from datetime import datetime
 import cv2
+import time
+import os
+import uuid
 from deepface import DeepFace
 from ultralytics import YOLO
-
 from emotion_utils import (
     create_session_id,
     init_emotion_counts,
     save_session_summary
 )
 
-def main():
-    try:
-        duration_minutes = float(input("Enter monitoring duration in minutes (e.g., 1.5): "))
-    except ValueError:
-        duration_minutes = 1.0
+# ===============================
+# SESSION SETUP
+# ===============================
+duration_minutes = int(input("Enter monitoring duration in minutes: "))
+session_id = create_session_id()
 
-    duration_seconds = duration_minutes * 60
-    session_id = create_session_id()
-    print(f"\nStarting session: {session_id}\n")
+emotion_counts = init_emotion_counts()
+start_time = time.time()
+last_analysis = 0
 
-    emotion_counts = init_emotion_counts()
-    total_faces_analyzed = 0
-    total_frames = 0
+total_faces_analyzed = 0
+total_frames = 0
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Camera not accessible")
-        return
+# ===============================
+# NEW FEATURE: IMAGE STORAGE
+# ===============================
+EMOTIONS = ["focused", "laughing", "bored", "sad", "using_phone"]
+BASE_DIR = os.path.join("static", "emotions", session_id)
 
-    yolo_model = YOLO("yolov8n.pt")
+for emo in EMOTIONS:
+    os.makedirs(os.path.join(BASE_DIR, emo), exist_ok=True)
 
-    start_time = time.time()
-    last_time = 0
-    interval = 0.8
+def save_emotion_image(frame, emotion):
+    filename = f"{uuid.uuid4().hex}.jpg"
+    path = os.path.join(BASE_DIR, emotion, filename)
+    cv2.imwrite(path, frame)
 
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+# ===============================
+# MODELS
+# ===============================
+cap = cv2.VideoCapture(0)
+yolo = YOLO("yolov8n.pt")
 
-            total_frames += 1
-            now = time.time()
+print("Session started. Press Ctrl+C to stop.")
 
-            if now - last_time >= interval:
-                last_time = now
-                try:
-                    results = DeepFace.analyze(
-                        frame, actions=["emotion"], enforce_detection=False
-                    )
-                    if isinstance(results, dict):
-                        results = [results]
+try:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-                    for r in results:
-                        emo = r.get("dominant_emotion", "").lower()
+        total_frames += 1
+        current_time = time.time()
 
-                        if emo in ["happy", "surprise"]:
-                            label = "laughing"
-                        elif emo in ["neutral"]:
-                            label = "focused"
-                        elif emo in ["angry", "disgust", "fear"]:
-                            label = "bored"
-                        elif emo == "sad":
-                            label = "sad"
-                        else:
-                            label = None
+        # ===============================
+        # EMOTION DETECTION (every 0.8s)
+        # ===============================
+        if current_time - last_analysis > 0.8:
+            last_analysis = current_time
+            try:
+                results = DeepFace.analyze(
+                    frame,
+                    actions=["emotion"],
+                    enforce_detection=False
+                )
 
-                        if label:
-                            emotion_counts[label] += 1
-                            total_faces_analyzed += 1
+                dominant = results[0]["dominant_emotion"]
 
-                except Exception as e:
-                    print("DeepFace:", e)
+                if dominant in ["happy", "surprise"]:
+                    mapped = "laughing"
+                elif dominant == "neutral":
+                    mapped = "focused"
+                elif dominant in ["angry", "disgust", "fear"]:
+                    mapped = "bored"
+                else:
+                    mapped = "sad"
 
-                phone_pred = yolo_model(frame, verbose=False)[0]
-                phone = False
-                for box in phone_pred.boxes:
-                    cls = int(box.cls[0])
-                    label = phone_pred.names[cls]
-                    if label in ["cell phone", "phone"]:
-                        phone = True
-                        break
+                emotion_counts[mapped] += 1
+                total_faces_analyzed += 1
 
-                if phone:
+                # ✅ NEW: save emotion image
+                save_emotion_image(frame, mapped)
+
+            except Exception:
+                pass
+
+        # ===============================
+        # PHONE DETECTION (YOLO)
+        # ===============================
+        yolo_results = yolo(frame, verbose=False)
+
+        for r in yolo_results:
+            for box in r.boxes:
+                cls = int(box.cls[0])
+                label = yolo.names[cls]
+
+                if label in ["cell phone", "phone"]:
                     emotion_counts["using_phone"] += 1
-                    total_faces_analyzed += 1
 
-            if now - start_time >= duration_seconds:
-                break
+                    # ✅ NEW: save phone image
+                    save_emotion_image(frame, "using_phone")
 
-    except KeyboardInterrupt:
-        print("Stopped manually")
+        if (current_time - start_time) / 60 >= duration_minutes:
+            break
 
-    finally:
-        cap.release()
+except KeyboardInterrupt:
+    print("Session interrupted.")
 
-    path = save_session_summary(
-        session_id,
-        duration_minutes,
-        emotion_counts,
-        total_faces_analyzed,
-        total_frames
-    )
+cap.release()
 
-    print("\n=== SUMMARY ===")
-    print("Saved:", path)
-    print("Counts:", emotion_counts)
-    print("\nRun: python app.py")
-    print("Visit: http://127.0.0.1:5000/")
+# ===============================
+# SAVE SESSION SUMMARY
+# ===============================
+save_session_summary(
+    session_id=session_id,
+    duration_minutes=duration_minutes,
+    emotion_counts=emotion_counts,
+    total_faces_analyzed=total_faces_analyzed,
+    total_frames=total_frames
+)
 
-if __name__ == "__main__":
-    main()
+print("Session saved:", session_id)
+print("Emotion counts:", emotion_counts)

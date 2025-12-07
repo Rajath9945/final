@@ -1,64 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Compare Sessions</title>
+<meta charset="UTF-8">
+<title>Compare Sessions</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* Glass panel */
+.glass {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Glow background blobs */
+.blob {
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.4;
+    animation: float 18s infinite alternate ease-in-out;
+}
+.blob.blue { background: #3b82f6; top: -120px; left: -120px; }
+.blob.red { background: #ef4444; bottom: -120px; right: -120px; animation-delay: 6s; }
+
+@keyframes float {
+    from { transform: translate(0,0); }
+    to { transform: translate(90px,-60px); }
+}
+
+/* Fade-in */
+.fade {
+    animation: fadeIn 0.9s ease;
+}
+@keyframes fadeIn {
+    from { opacity:0; transform: translateY(14px); }
+    to { opacity:1; transform: translateY(0); }
+}
+</style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-10">
 
-<a href="/" class="underline mb-6 block">&larr; Back to Sessions</a>
+<body class="relative bg-slate-950 text-white min-h-screen overflow-x-hidden">
 
-<h1 class="text-4xl font-extrabold text-center mb-2">📈 Session Comparison</h1>
-<p class="text-center text-slate-300 mb-6">
-    Comparing
-    <span class="font-mono bg-white/10 px-2 py-1 rounded-lg">{{ s1.session_id }}</span>
-    vs
-    <span class="font-mono bg-white/10 px-2 py-1 rounded-lg">{{ s2.session_id }}</span>
-</p>
+<!-- Background motion -->
+<div class="blob blue"></div>
+<div class="blob red"></div>
 
-<div class="max-w-5xl mx-auto bg-white/10 p-6 rounded-3xl shadow-xl">
+<!-- HEADER -->
+<div class="relative z-10 flex items-center justify-between p-8 border-b border-white/10">
+    <a href="/" class="px-5 py-2 rounded-xl glass hover:bg-blue-500/30 transition">
+        ← Sessions
+    </a>
+
+    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
+        Session Comparison
+    </h1>
+
+    <div></div>
+</div>
+
+<div class="relative z-10 p-8 space-y-10 fade">
+
+<!-- SESSION BADGES -->
+<div class="flex flex-wrap justify-center gap-4">
+    <span class="px-5 py-2 rounded-full glass font-mono text-blue-300">
+        {{ s1.session_id }}
+    </span>
+    <span class="text-slate-400 text-xl">vs</span>
+    <span class="px-5 py-2 rounded-full glass font-mono text-red-300">
+        {{ s2.session_id }}
+    </span>
+</div>
+
+<!-- COMPARISON CARD -->
+<div class="max-w-5xl mx-auto glass rounded-3xl p-8 shadow-2xl">
+
+    <h2 class="text-2xl font-semibold mb-6 text-center">
+        Emotion Distribution Comparison
+    </h2>
+
     <canvas id="compareChart"></canvas>
 </div>
 
-<script>
-    const labels = {{ labels | tojson }};
-    const s1_vals = {{ s1_vals | tojson }};
-    const s2_vals = {{ s2_vals | tojson }};
+</div>
 
-    new Chart(document.getElementById("compareChart"), {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: "{{ s1.session_id }}",
-                    data: s1_vals,
-                    borderColor: "#60a5fa",
-                    backgroundColor: "rgba(96,165,250,0.3)",
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: "{{ s2.session_id }}",
-                    data: s2_vals,
-                    borderColor: "#f97373",
-                    backgroundColor: "rgba(248,115,115,0.3)",
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
+<!-- ================= JS ================= -->
+<script>
+const labels = {{ labels | tojson }};
+const s1_vals = {{ s1_vals | tojson }};
+const s2_vals = {{ s2_vals | tojson }};
+
+new Chart(document.getElementById("compareChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "{{ s1.session_id }}",
+                data: s1_vals,
+                borderColor: "#60a5fa",
+                backgroundColor: "rgba(96,165,250,0.25)",
+                borderWidth: 3,
+                tension: 0.45,
+                fill: true
+            },
+            {
+                label: "{{ s2.session_id }}",
+                data: s2_vals,
+                borderColor: "#f87171",
+                backgroundColor: "rgba(248,113,113,0.25)",
+                borderWidth: 3,
+                tension: 0.45,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        animation: {
+            duration: 2200,
+            easing: "easeOutQuart"
         },
-        options: {
-            responsive: true,
-            animation: { duration: 2000, easing: "easeInOutQuad" },
-            scales: { y: { beginAtZero: true } }
+        scales: {
+            y: { beginAtZero: true }
+        },
+        plugins: {
+            legend: {
+                position: "bottom",
+                labels: {
+                    color: "#e5e7eb"
+                }
+            },
+            tooltip: {
+                backgroundColor: "#020617",
+                titleColor: "#fff",
+                bodyColor: "#e5e7eb"
+            }
         }
-    });
+    }
+});
 </script>
 
 </body>

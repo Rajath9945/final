@@ -1,59 +1,70 @@
 import os
 import json
 from datetime import datetime
-from typing import Dict
 
-EMOTION_LABELS = ["focused", "laughing", "bored", "sad", "using_phone"]
+SESSION_DIR = "data/sessions"
 
-SESSIONS_DIR = os.path.join("data", "sessions")
-os.makedirs(SESSIONS_DIR, exist_ok=True)
+os.makedirs(SESSION_DIR, exist_ok=True)
 
-
-def create_session_id() -> str:
+def create_session_id():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def init_emotion_counts():
+    return {
+        "focused": 0,
+        "laughing": 0,
+        "bored": 0,
+        "sad": 0,
+        "using_phone": 0
+    }
 
-def init_emotion_counts() -> Dict[str, int]:
-    return {label: 0 for label in EMOTION_LABELS}
+def save_session_summary(session_id, duration_minutes, emotion_counts,
+                         total_faces_analyzed, total_frames):
 
-
-def save_session_summary(
-    session_id: str,
-    duration_minutes: float,
-    emotion_counts: Dict[str, int],
-    total_faces_analyzed: int,
-    total_frames: int,
-):
     data = {
         "session_id": session_id,
         "duration_minutes": duration_minutes,
+        "emotion_counts": emotion_counts,
         "total_faces_analyzed": total_faces_analyzed,
         "total_frames": total_frames,
-        "emotion_counts": emotion_counts,
         "total_emotion_samples": sum(emotion_counts.values()),
-        "saved_at": datetime.now().isoformat(),
+        "saved_at": datetime.now().isoformat()
     }
 
-    file_path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
-    with open(file_path, "w") as f:
-        json.dump(data, f, indent=4)
-
+    path = os.path.join(SESSION_DIR, f"session_{session_id}.json")
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
 
 def load_all_sessions():
     sessions = []
-    if not os.path.exists(SESSIONS_DIR):
-        return sessions
-
-    for fname in os.listdir(SESSIONS_DIR):
-        if fname.endswith(".json"):
-            with open(os.path.join(SESSIONS_DIR, fname), "r") as f:
+    for file in os.listdir(SESSION_DIR):
+        if file.endswith(".json"):
+            with open(os.path.join(SESSION_DIR, file)) as f:
                 sessions.append(json.load(f))
     return sessions
 
-
-def load_session(session_id: str):
-    file_path = os.path.join(SESSIONS_DIR, f"session_{session_id}.json")
-    if not os.path.exists(file_path):
+def load_session(session_id):
+    path = os.path.join(SESSION_DIR, f"session_{session_id}.json")
+    if not os.path.exists(path):
         return None
-    with open(file_path, "r") as f:
+    with open(path) as f:
         return json.load(f)
+
+# ===============================
+# NEW FEATURE: LOAD EMOTION IMAGES
+# ===============================
+def load_emotion_images(session_id):
+    base = os.path.join("static", "emotions", session_id)
+    images = {}
+
+    for emo in ["focused", "laughing", "bored", "sad", "using_phone"]:
+        emo_dir = os.path.join(base, emo)
+        if os.path.exists(emo_dir):
+            images[emo] = [
+                f"/static/emotions/{session_id}/{emo}/{img}"
+                for img in os.listdir(emo_dir)
+            ]
+        else:
+            images[emo] = []
+
+    return images

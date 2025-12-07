@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Founders | Effective Learning</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    .glow {
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.35;
+    }
+    .glow.one {
+        background: #6366f1;
+        top: -120px;
+        left: -120px;
+    }
+    .glow.two {
+        background: #22d3ee;
+        bottom: -140px;
+        right: -140px;
+    }
+
+    .glass {
+        background: rgba(255,255,255,0.08);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.12);
+    }
+</style>
+</head>
+
+<body class="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 min-h-screen text-white overflow-x-hidden">
+
+<div class="glow one"></div>
+<div class="glow two"></div>
+
+<div class="relative z-10 max-w-7xl mx-auto py-16 px-4">
+
+    <!-- BACK -->
+    <div class="text-center mb-10">
+        <a href="/" class="text-indigo-400 hover:underline text-sm">
+            ← Back to Home
+        </a>
+    </div>
+
+    <!-- TITLE -->
+    <header class="mb-16 text-center">
+        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight">
+            👥 Project Contributors
+        </h1>
+        <div class="w-24 h-1 bg-indigo-500 mx-auto my-6 rounded-full"></div>
+        <p class="text-slate-300 text-lg max-w-3xl mx-auto">
+            The team and guide behind the Real-Time Effective Learning Analytics System.
+        </p>
+    </header>
+
+    <!-- ABOUT US -->
+    <section class="glass rounded-3xl p-10 mb-16 text-center">
+        <h2 class="text-3xl font-bold mb-4">📌 About Us</h2>
+        <p class="text-slate-300 max-w-4xl mx-auto leading-relaxed text-lg">
+            We are a team of passionate engineers working on AI-driven learning analytics.
+            Our goal is to analyze student engagement using face detection, emotion
+            recognition, and behavioral indicators to improve teaching effectiveness.
+        </p>
+    </section>
+
+    <!-- ✅ ALL FOUR CARDS IN ONE ROW -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        <!-- GUIDE -->
+        <div class="glass rounded-3xl p-8 text-center hover:scale-105 transition">
+            <img src="{{ url_for('static', filename='founders/guide.png') }}"
+                 alt="Dr. Maya B S"
+                 class="w-32 h-32 mx-auto rounded-full object-cover
+                        border-4 border-purple-500 mb-6">
+
+            <h3 class="text-2xl font-bold">Dr. Maya B S</h3>
+            <p class="text-purple-300 font-semibold mt-1">
+                Guide & Project Supervisor
+            </p>
+
+            <p class="text-slate-300 mt-4 text-sm leading-relaxed">
+                Associate Professor<br>
+                Department of CSE<br>
+                Bangalore Institute of Technology, Bengaluru
+            </p>
+        </div>
+
+        <!-- Rajath -->
+        <div class="glass rounded-3xl p-8 text-center hover:scale-105 transition">
+            <img src="{{ url_for('static', filename='founders/rajath.jpeg') }}"
+                 alt="Rajath M"
+                 class="w-32 h-32 mx-auto rounded-full object-cover
+                        border-4 border-indigo-500 mb-6">
+
+            <h3 class="text-2xl font-bold">Rajath M</h3>
+            <p class="text-indigo-400 font-semibold mt-1">
+                Full Stack Developer
+            </p>
+
+            <p class="text-slate-300 mt-4 text-sm leading-relaxed">
+                Frontend & backend APIs, dashboards, UI/UX design,
+                template building, and complete system testing.
+            </p>
+        </div>
+
+        <!-- Manoj -->
+        <div class="glass rounded-3xl p-8 text-center hover:scale-105 transition">
+            <img src="{{ url_for('static', filename='founders/manoj.jpeg') }}"
+                 alt="Manoj Gowda M"
+                 class="w-32 h-32 mx-auto rounded-full object-cover
+                        border-4 border-cyan-500 mb-6">
+
+            <h3 class="text-2xl font-bold">Manoj Gowda M</h3>
+            <p class="text-cyan-400 font-semibold mt-1">
+                AI & Computer Vision
+            </p>
+
+            <p class="text-slate-300 mt-4 text-sm leading-relaxed">
+                AI model building, face detection coding,
+                emotion recognition, and computer vision integration.
+            </p>
+        </div>
+
+        <!-- Rakshith -->
+        <div class="glass rounded-3xl p-8 text-center hover:scale-105 transition">
+            <img src="{{ url_for('static', filename='founders/rakshith.jpeg') }}"
+                 alt="Rakshith P"
+                 class="w-32 h-32 mx-auto rounded-full object-cover
+                        border-4 border-emerald-500 mb-6">
+
+            <h3 class="text-2xl font-bold">Rakshith P</h3>
+            <p class="text-emerald-400 font-semibold mt-1">
+                UI & Data Formatting
+            </p>
+
+            <p class="text-slate-300 mt-4 text-sm leading-relaxed">
+                Template creation, UI structuring,
+                JSON formatting, and data organization.
+            </p>
+        </div>
+
+    </section>
+
+</div>
+
+</body>
+</html>
